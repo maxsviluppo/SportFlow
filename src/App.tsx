@@ -67,64 +67,88 @@ interface FABAction {
   id: string; icon: React.ReactNode; label: string;
   color: string; onClick: () => void;
 }
-const FAB = ({ actions, isOpen, onToggle }: { actions: FABAction[]; isOpen: boolean; onToggle: () => void }) => (
-  <div className="fixed bottom-10 right-5 z-50 flex flex-col items-end justify-end pointer-events-none">
-    <div className="relative flex flex-col-reverse items-end gap-3 pointer-events-auto">
-      {/* Icons List */}
-      <div className="flex flex-col-reverse items-end gap-3 mb-1">
+const FAB = ({ categories, actions, isOpen, onToggle, onSelectCategory, selectedCategory }: 
+  { categories: string[]; actions: FABAction[]; isOpen: boolean; onToggle: () => void; onSelectCategory: (cat: string) => void; selectedCategory: string }) => (
+  <div className="fixed bottom-10 right-5 z-50 flex items-center justify-center pointer-events-none">
+    <div className="relative pointer-events-auto">
+      
+      {/* VERTICAL CATEGORIES (Going Up) */}
+      <div className="absolute bottom-[72px] right-2 flex flex-col-reverse items-end gap-3">
         <AnimatePresence>
-          {isOpen && actions.map((a, i) => (
+          {isOpen && categories.map((cat, i) => (
             <motion.div
-              key={a.id}
+              key={cat}
               initial={{ opacity: 0, scale: 0.5, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.5, y: 20 }}
-              transition={{ delay: i * 0.05, type: 'spring', stiffness: 250, damping: 20 }}
-              className="flex items-center gap-3 pr-2"
+              transition={{ delay: i * 0.04, type: 'spring', stiffness: 260, damping: 20 }}
+              className="flex items-center gap-3"
             >
-              <motion.div
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="bg-zinc-900/90 text-white/80 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10"
-              >
-                {a.label}
-              </motion.div>
+              <div className="bg-zinc-900/90 text-white/50 text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-full border border-white/5 backdrop-blur-md">
+                {cat === 'all' ? 'Tutte' : cat}
+              </div>
               <motion.button
-                whileTap={{ scale: 0.88 }}
-                onClick={() => { a.onClick(); onToggle(); }}
-                className="w-12 h-12 rounded-full flex items-center justify-center shadow-xl border border-white/10 text-white"
-                style={{ background: a.color + '22', boxShadow: `0 0 20px ${a.color}44` }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => { onSelectCategory(cat); onToggle(); }}
+                className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${selectedCategory === cat ? 'bg-emerald-500 border-emerald-400 text-black shadow-[0_0_20px_rgba(16,185,129,0.4)]' : 'bg-zinc-900/80 border-white/10 text-white/70'}`}
               >
-                {a.icon}
+                <div className="text-[10px] font-black uppercase">{cat[0]}</div>
               </motion.button>
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      {/* Main Trigger (Floating) */}
+      {/* HORIZONTAL ACTIONS (Going Left) */}
+      <div className="absolute right-[72px] bottom-2 flex flex-row-reverse items-center gap-3">
+        <AnimatePresence>
+          {isOpen && actions.map((a, i) => (
+            <motion.div
+              key={a.id}
+              initial={{ opacity: 0, scale: 0.5, x: 20 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.5, x: 20 }}
+              transition={{ delay: i * 0.04, type: 'spring', stiffness: 260, damping: 20 }}
+              className="group flex flex-col items-center gap-2"
+            >
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => { a.onClick(); onToggle(); }}
+                className="w-12 h-12 rounded-full flex items-center justify-center shadow-xl border border-white/10 text-white/80 transition-all bg-zinc-900/80 hover:bg-zinc-800"
+                style={{ boxShadow: `0 0 15px ${a.color}22` }}
+              >
+                {a.icon}
+              </motion.button>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-black text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap">
+                {a.label}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Main Trigger (Soccer Ball) */}
       <motion.button
-        whileTap={{ scale: 0.88 }}
+        whileTap={{ scale: 0.8 }}
         onClick={onToggle}
-        className={`${isOpen ? 'absolute' : 'relative'} w-16 h-16 rounded-full flex items-center justify-center text-white z-10 overflow-hidden shadow-2xl`}
-        style={{ bottom: 0, right: 0 }}
-        animate={{ y: isOpen ? -430 : 0 }}
-        transition={{ type: 'spring', stiffness: 120, damping: 22 }}
+        className="relative w-16 h-16 rounded-full flex items-center justify-center text-white z-20 shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden bg-zinc-900 border-2 border-white/5"
       >
         <motion.img 
           src="/iconpalla.png"
           alt="Menu"
-          className="w-12 h-12 object-contain"
-          animate={{ 
-            rotate: isOpen ? 720 : [0, 360], 
-          }}
-          transition={{ 
-            rotate: isOpen 
-              ? { duration: 0.8, ease: "circOut" } 
-              : { repeat: Infinity, duration: 10, ease: "linear" }
-          }}
+          className="w-11 h-11 object-contain"
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
         />
+        {isOpen && (
+           <motion.div 
+             initial={{ opacity: 0 }} 
+             animate={{ opacity: 1 }} 
+             className="absolute inset-0 bg-emerald-500/10 backdrop-blur-sm flex items-center justify-center"
+           >
+             <div className="text-emerald-400 font-bold text-xs uppercase tracking-widest">Close</div>
+           </motion.div>
+        )}
       </motion.button>
     </div>
   </div>
@@ -203,7 +227,7 @@ const NewsCard = ({ item, isActive, isFavorite, onToggleFavorite, onReadMore }:
           </div>
 
           {/* Title */}
-          <h2 className="text-3xl md:text-5xl font-black text-white leading-[1.05] tracking-tighter mb-4 drop-shadow-2xl">
+          <h2 className="text-2xl md:text-5xl font-extrabold text-white/95 leading-[1.15] tracking-tight mb-4 drop-shadow-2xl">
             {stripHtml(item.title)}
           </h2>
 
@@ -635,34 +659,18 @@ export default function App() {
     }
   };
 
+  // – Categories for FAB
+  const fabCategories = useMemo(() => CATEGORIES.filter(c => c.id !== 'favorites').map(c => c.id), []);
+
   // – Login / Logout
-  const handleLogin = async () => {
-    try { await signInWithGoogle(); } catch {}
-  };
-  const handleLogout = async () => {
-    try { await logout(); setFavorites([]); } catch {}
-  };
+  const handleLogin = async () => { try { await signInWithGoogle(); } catch {} };
+  const handleLogout = async () => { try { await logout(); setFavorites([]); } catch {} };
 
-  // – Invite friend
-  const handleInvite = () => {
-    const msg = 'Prova SportFlow, il miglior feed di notizie sportive! 🏆 http://localhost:3011';
-    if (navigator.share) navigator.share({ title: 'SportFlow', text: msg }).catch(() => {});
-    else { navigator.clipboard.writeText(msg).catch(() => {}); alert('Link copiato!'); }
-  };
-
-  // – FAB actions
   const fabActions: FABAction[] = [
-    { id: 'search',  icon: <Search size={20} />,      label: 'Cerca',   color: '#6366f1', onClick: () => setIsSearchOpen(true) },
-    { id: 'admin',   icon: <Shield size={20} />,      label: 'Admin',   color: '#06b6d4', onClick: () => setIsAdminLoginOpen(true) },
-    { id: 'cats',    icon: <Trophy size={20} />,      label: 'Sport',   color: '#10b981', onClick: () => setIsMenuOpen(true) },
-    { id: 'invite',  icon: <Send size={20} />,        label: 'Invita',  color: '#10b981', onClick: handleInvite },
-    { id: 'profile', icon: <img src="/iconpalla.png" className="w-7 h-7 object-contain" />, label: 'Profilo', color: '#f59e0b', onClick: () => setIsProfileOpen(true) },
-    { id: 'share',   icon: <Share2 size={20} />,      label: 'Condividi', color: '#ec4899',
-      onClick: () => { const item = filteredNews[currentIndex]; if (item && navigator.share) navigator.share({ title: item.title, url: item.link }).catch(() => {}); }
-    },
-    { id: 'fav',     icon: <Heart size={20} />,       label: 'Salva',   color: '#ef4444',
-      onClick: () => { const item = filteredNews[currentIndex]; if (item) toggleFav(item.id); }
-    },
+    { id: 'search',  icon: <Search size={20} />, label: 'Cerca', color: '#10b981', onClick: () => setIsSearchOpen(true) },
+    { id: 'favs',    icon: <Heart size={20} />,  label: 'Salvati', color: '#ef4444', onClick: () => { setSelectedCategory('favorites'); setCurrentIndex(0); if(mainRef.current) mainRef.current.scrollTop = 0; } },
+    { id: 'profile', icon: <UserCircle2 size={20} />, label: 'Profilo', color: '#3b82f6', onClick: () => setIsProfileOpen(true) },
+    { id: 'admin',   icon: <Shield size={20} />, label: 'Admin', color: '#f59e0b', onClick: () => setIsAdminLoginOpen(true) },
   ];
 
   // ── Loading screen
@@ -755,9 +763,20 @@ export default function App() {
         )}
       </main>
 
-      {/* ─── FAB Speed Dial ─── */}
+      {/* ─── FAB L-Shape ─── */}
       {!isMenuOpen && !isSearchOpen && !isProfileOpen && !readerItem && (
-        <FAB actions={fabActions} isOpen={isFABOpen} onToggle={() => setIsFABOpen(p => !p)} />
+        <FAB 
+          categories={fabCategories}
+          actions={fabActions} 
+          isOpen={isFABOpen} 
+          onToggle={() => setIsFABOpen(p => !p)} 
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            setCurrentIndex(0);
+            setTimeout(() => mainRef.current?.scrollTo({ top: 0 }), 100);
+          }}
+          selectedCategory={selectedCategory}
+        />
       )}
 
       {/* ─── Tap to close FAB ─── */}
