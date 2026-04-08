@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;800&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", "Inter", sans-serif;
+  --font-display: "Montserrat", sans-serif;
+  --font-sport: "Anton", sans-serif;
+  --font-stats: "Oswald", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
+  
+  --color-neon-blue: #00f3ff;
+  --color-neon-pink: #ff00ff;
+  --color-neon-green: #39ff14;
+  --color-neon-purple: #bc13fe;
+  --color-neon-indigo: #4f46e5;
+  --color-neon-blue: #00f3ff;
+  --color-neon-pink: #ff00ff;
+  --color-neon-green: #39ff14;
+  --color-neon-purple: #bc13fe;
+  --color-neon-indigo: #4f46e5;
+  --color-azure: #00f3ff;
+  --color-emerald-500: #10b981;
+}
+
+@keyframes pulse-azure {
+  0%, 100% {
+    text-shadow: 0 0 5px var(--color-azure), 0 0 10px var(--color-azure);
+    color: var(--color-azure);
+  }
+  50% {
+    text-shadow: 0 0 15px var(--color-azure), 0 0 30px var(--color-azure);
+    color: #fff;
+  }
+}
+
+.animate-pulse-azure {
+  animation: pulse-azure 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer base {
+  body {
+    @apply bg-black text-white font-sans antialiased overflow-hidden;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.6);
+}
+
+/* Snap Scroll Utilities */
+main {
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-start {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+

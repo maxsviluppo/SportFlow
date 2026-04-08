@@ -1,0 +1,16 @@
+{
+  "name": "GamesPulse",
+  "short_name": "GamesPulse",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00c3ff",
+  "description": "Your Daily Gaming Intel",
+  "icons": [
+    {
+      "src": "gamepad.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
