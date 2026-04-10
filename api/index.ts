@@ -173,6 +173,113 @@ app.get("/api/news", async (req, res) => {
   } catch (e) { res.status(500).json([]); }
 });
 
+app.get("/api/standings/seriea", async (req, res) => {
+  try {
+    const apiURL = 'https://api-sdp.legaseriea.it/v1/serie-a/football/seasons/serie-a::Football_Season::5f0e080fc3a44073984b75b3a8e06a8a/standings/overall?locale=it-IT';
+    const response = await fetch(apiURL, {
+      headers: { 
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    const standings: any[] = [];
+
+    if (data.standings && data.standings[0] && data.standings[0].teams) {
+      data.standings[0].teams.forEach((teamEntry: any) => {
+        const stats = teamEntry.stats || [];
+        const rankStat = stats.find((s: any) => s.statsId === 'rank');
+        const pointsStat = stats.find((s: any) => s.statsId === 'points');
+        const playedStat = stats.find((s: any) => s.statsId === 'played');
+        const wonStat = stats.find((s: any) => s.statsId === 'won');
+
+        standings.push({
+          position: rankStat ? rankStat.statsValue : '?',
+          team: teamEntry.officialName || teamEntry.shortName,
+          points: pointsStat ? pointsStat.statsValue : '0',
+          played: playedStat ? playedStat.statsValue : '0',
+          won: wonStat ? wonStat.statsValue : '0'
+        });
+      });
+    }
+
+    res.json(standings.sort((a, b) => parseInt(a.position) - parseInt(b.position)));
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch Serie A standings" });
+  }
+});
+
+app.get("/api/standings/f1", async (req, res) => {
+  try {
+    const skyURL = 'https://sport.sky.it/formula-1/classifiche';
+    const response = await fetch(skyURL);
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const standings: any[] = [];
+    $('.fb-sport-table__row, tr').each((i, el) => {
+      const row = $(el);
+      const pos = row.find('.fb-sport-table__position, td:first-child').text().trim();
+      const name = row.find('.fb-sport-table__player-name, td:nth-child(2)').text().trim();
+      const team = row.find('.fb-sport-table__team-name, td:nth-child(3)').text().trim();
+      const points = row.find('.fb-sport-table__points, td:last-child').text().trim();
+      if (pos && name && !isNaN(parseInt(pos))) {
+        standings.push({
+          position: pos,
+          name: name.replace(/\n/g, ' ').replace(/\s+/g, ' '),
+          team: team,
+          points: points || '0',
+          extra: `Team: ${team}`
+        });
+      }
+    });
+
+    if (standings.length > 0) return res.json(standings.slice(0, 20));
+
+    const ergastRes = await fetch('https://ergast.com/api/f1/current/driverStandings.json');
+    const ergastData = await ergastRes.json();
+    const fallback = ergastData.MRData.StandingsTable.StandingsLists[0].DriverStandings.map((s: any) => ({
+      position: s.position,
+      name: `${s.Driver.givenName} ${s.Driver.familyName}`,
+      team: s.Constructors[0].name,
+      points: s.points,
+      extra: `Wins: ${s.wins}`
+    }));
+    res.json(fallback);
+  } catch (e) { res.json([]); }
+});
+
+app.get("/api/standings/nba", async (req, res) => {
+  try {
+    const apiURL = 'https://site.api.espn.com/apis/v2/sports/basketball/nba/standings';
+    const response = await fetch(apiURL);
+    const data = await response.json();
+    const standings: any[] = [];
+    if (data.children) {
+      data.children.forEach((conference: any) => {
+        if (conference.standings && conference.standings.entries) {
+          conference.standings.entries.forEach((entry: any) => {
+            const team = entry.team;
+            const stats = entry.stats;
+            standings.push({
+              position: entry.id,
+              name: team.displayName,
+              shortName: team.shortDisplayName,
+              logo: team.logos?.[0]?.href,
+              points: stats.find((s: any) => s.name === 'wins')?.value + '-' + stats.find((s: any) => s.name === 'losses')?.value,
+              winPct: stats.find((s: any) => s.name === 'winPercent')?.value,
+              conference: conference.name
+            });
+          });
+        }
+      });
+    }
+    res.json(standings.sort((a, b) => parseFloat(b.winPct) - parseFloat(a.winPct)));
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch NBA standings" });
+  }
+});
+
 app.get("/api/config/:type", async (req, res) => {
   if (!db) return res.json({});
   try {

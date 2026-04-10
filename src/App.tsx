@@ -11,7 +11,7 @@ import {
   Volume2, VolumeX, Play, LayoutGrid, UserCircle2,
   UserPlus, ChevronUp, LogIn, LogOut, Zap, ArrowLeft,
   BookOpen, ExternalLink, Send, Shield, Settings,
-  Plus, Save, Trash2, RefreshCw, Key
+  Plus, Save, Trash2, RefreshCw, Key, Calendar, MapPin, Clock
 } from 'lucide-react';
 import {
   auth, db, signInWithGoogle, logout, onAuthStateChanged,
@@ -48,7 +48,6 @@ const CATEGORIES = [
   { id: 'motori',    label: 'Motori',  icon: '🏎️', color: '#f59e0b' },
   { id: 'tennis',    label: 'Tennis',  icon: '🎾', color: '#84cc16' },
   { id: 'basket',    label: 'Basket',  icon: '🏀', color: '#f97316' },
-  { id: 'mondo',     label: 'Mondo',   icon: '🌍', color: '#06b6d4' },
   { id: 'favorites', label: 'Salvati', icon: '❤️', color: '#ef4444' },
 ];
 
@@ -579,6 +578,9 @@ export default function App() {
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [adminUser, setAdminUser] = useState('');
   const [adminPass, setAdminPass] = useState('');
+  const [isStandingsOpen, setIsStandingsOpen] = useState(false);
+  const [isEventsOpen, setIsEventsOpen] = useState(false);
+  const [standingsTab, setStandingsTab] = useState<'f1' | 'seriea' | 'basket'>('seriea');
   const mainRef = useRef<HTMLElement>(null);
 
   // – Auth
@@ -668,6 +670,8 @@ export default function App() {
 
   const fabActions: FABAction[] = [
     { id: 'search',  icon: <Search size={20} />, label: 'Cerca', color: '#10b981', onClick: () => setIsSearchOpen(true) },
+    { id: 'standings', icon: <Trophy size={20} />, label: 'Classifiche', color: '#f59e0b', onClick: () => setIsStandingsOpen(true) },
+    { id: 'events', icon: <Calendar size={20} />, label: 'Eventi', color: '#8b5cf6', onClick: () => setIsEventsOpen(true) },
     { id: 'favs',    icon: <Heart size={20} />,  label: 'Salvati', color: '#ef4444', onClick: () => { setSelectedCategory('favorites'); setCurrentIndex(0); if(mainRef.current) mainRef.current.scrollTop = 0; } },
     { id: 'profile', icon: <UserCircle2 size={20} />, label: 'Profilo', color: '#3b82f6', onClick: () => setIsProfileOpen(true) },
     { id: 'admin',   icon: <Shield size={20} />, label: 'Admin', color: '#f59e0b', onClick: () => setIsAdminLoginOpen(true) },
@@ -764,7 +768,7 @@ export default function App() {
       </main>
 
       {/* ─── FAB L-Shape ─── */}
-      {!isMenuOpen && !isSearchOpen && !isProfileOpen && !readerItem && (
+      {!isMenuOpen && !isSearchOpen && !isProfileOpen && !readerItem && !isStandingsOpen && !isEventsOpen && (
         <FAB 
           categories={fabCategories}
           actions={fabActions} 
@@ -919,6 +923,235 @@ export default function App() {
       <AnimatePresence>
         {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
       </AnimatePresence>
+
+      {/* ─── Standings Overlay ─── */}
+      <AnimatePresence>
+        {isStandingsOpen && (
+          <StandingsOverlay 
+            onClose={() => setIsStandingsOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ─── Events Overlay ─── */}
+      <AnimatePresence>
+        {isEventsOpen && (
+          <EventsOverlay 
+            onClose={() => setIsEventsOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+// ─── StandingsOverlay ─────────────────────────────────────────────────────────
+const StandingsOverlay = ({ onClose }: { 
+  onClose: () => void;
+}) => {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/standings/seriea')
+      .then(r => r.json())
+      .then(res => {
+        setData(res.map((s: any) => ({
+          position: s.position,
+          name: s.team,
+          info: 'Serie A',
+          points: s.points,
+          extra: `P: ${s.played} | W: ${s.won}`
+        })));
+        setLoading(false);
+      }).catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="fixed inset-0 z-[250] bg-black/95 backdrop-blur-3xl flex flex-col p-4 md:p-8"
+    >
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/30">
+              <Trophy className="text-amber-400" size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Classifiche Live</h2>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-1">Aggiornamento in tempo reale</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Only Serie A Standings */}
+        <div className="flex bg-white/5 p-1 rounded-2xl mb-6 border border-white/5">
+          <div className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-black shadow-xl flex items-center justify-center gap-2">
+            <span>⚽</span> Serie A
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div 
+                key="loading"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center h-64 gap-3"
+              >
+                <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Sincronizzazione API...</p>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key={activeTab}
+                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                className="space-y-3 pb-10"
+              >
+                {data?.map((item: any, idx: number) => (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.02 }}
+                    key={idx} 
+                    className="flex items-center gap-4 p-4 bg-white/5 hover:bg-white/[0.08] transition-colors rounded-2xl border border-white/5 group"
+                  >
+                    <div className="w-8 text-center text-lg font-black italic text-white/10 group-hover:text-emerald-500/30 transition-colors">
+                      {item.position}
+                    </div>
+                    
+                    {item.logo && (
+                      <div className="w-10 h-10 rounded-full bg-white/5 p-1.5 flex-shrink-0">
+                        <img src={item.logo} className="w-full h-full object-contain" alt="" />
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-white text-sm md:text-base uppercase tracking-tight truncate">{item.name}</span>
+                        <span className="text-[8px] font-black text-white/20 uppercase bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{item.info}</span>
+                      </div>
+                      <div className="text-[10px] text-white/30 font-bold uppercase tracking-wider">{item.extra}</div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className={`text-sm md:text-lg font-black ${idx < 3 ? 'text-amber-400' : 'text-emerald-400'}`}>{item.points}</div>
+                      <div className="text-[8px] font-bold text-white/20 uppercase">Record</div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+            <p className="text-[8px] text-white/20 font-bold uppercase tracking-[0.2em]">Dati: Sky Sport / Ergast API • 2026</p>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[8px] text-emerald-500/60 font-black uppercase tracking-widest">Dati Live</span>
+            </div>
+        </div>
+    </motion.div>
+  );
+};
+
+// ─── EventsOverlay ────────────────────────────────────────────────────────────
+const EventsOverlay = ({ onClose }: { onClose: () => void }) => {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/events/seriea')
+      .then(r => r.json())
+      .then(data => {
+        setEvents(data);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="fixed inset-0 z-[250] bg-black/95 backdrop-blur-3xl flex flex-col p-4 md:p-8"
+    >
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-violet-500/20 flex items-center justify-center border border-violet-500/30">
+            <Calendar className="text-violet-400" size={20} />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Eventi Live</h2>
+            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-1">Calendario Serie A</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all">
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <div className="w-12 h-12 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Caricamento calendario...</p>
+            </div>
+          ) : (
+            <div className="space-y-4 pb-10">
+              {events.map((event, idx) => (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.03 }}
+                  key={event.id || idx}
+                  className="bg-white/5 border border-white/5 rounded-[24px] overflow-hidden"
+                >
+                  <div className="bg-white/[0.03] px-5 py-3 flex items-center justify-between border-b border-white/5">
+                    <div className="flex items-center gap-2">
+                       <Calendar size={12} className="text-violet-400" />
+                       <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">{event.date}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <Clock size={12} className="text-violet-400" />
+                       <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">{event.time}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 flex flex-col items-center gap-4">
+                    <div className="flex items-center justify-center w-full gap-4">
+                      <div className="flex-1 text-right font-black text-sm md:text-base uppercase tracking-tight text-white">{event.homeTeam}</div>
+                      <div className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-black text-white/40">VS</div>
+                      <div className="flex-1 text-left font-black text-sm md:text-base uppercase tracking-tight text-white">{event.awayTeam}</div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-full">
+                       <MapPin size={12} className="text-emerald-400" />
+                       <span className="text-[9px] font-bold text-emerald-400/80 uppercase tracking-widest">{event.venue}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+          <p className="text-[8px] text-white/20 font-bold uppercase tracking-[0.2em]">Fonte: Corriere dello Sport Official Data</p>
+          <div className="flex items-center gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse`} />
+            <span className="text-[8px] text-emerald-500/60 font-black uppercase tracking-widest">Live Feed</span>
+          </div>
+      </div>
+    </motion.div>
+  );
+};
