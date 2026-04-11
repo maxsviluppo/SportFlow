@@ -487,15 +487,17 @@ app.get("/api/standings/seriea", async (req, res) => {
         const stats = teamEntry.stats || [];
         const rankStat = stats.find((s: any) => s.statsId === 'rank');
         const pointsStat = stats.find((s: any) => s.statsId === 'points');
-        const playedStat = stats.find((s: any) => s.statsId === 'played');
-        const wonStat = stats.find((s: any) => s.statsId === 'won');
+        const playedStat = stats.find((s: any) => s.statsId === 'matches-played');
+        const wonStat = stats.find((s: any) => s.statsId === 'win');
+        const logoUrl = teamEntry.imagery?.teamLogo ? `https://media-sdp.legaseriea.it/${teamEntry.imagery.teamLogo}` : null;
 
         standings.push({
           position: rankStat ? rankStat.statsValue : '?',
           team: teamEntry.officialName || teamEntry.shortName,
           points: pointsStat ? pointsStat.statsValue : '0',
           played: playedStat ? playedStat.statsValue : '0',
-          won: wonStat ? wonStat.statsValue : '0'
+          won: wonStat ? wonStat.statsValue : '0',
+          logo: logoUrl
         });
       });
     }

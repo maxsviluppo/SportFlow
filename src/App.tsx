@@ -962,7 +962,8 @@ const StandingsOverlay = ({ onClose }: {
           name: s.team,
           info: 'Serie A',
           points: s.points,
-          extra: `P: ${s.played} | W: ${s.won}`
+          extra: `P: ${s.played} | W: ${s.won}`,
+          logo: s.logo
         })));
         setLoading(false);
       }).catch(() => setLoading(false));
@@ -1010,7 +1011,7 @@ const StandingsOverlay = ({ onClose }: {
               </motion.div>
             ) : (
               <motion.div 
-                key={activeTab}
+                key="seriea"
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                 className="space-y-3 pb-10"
               >
